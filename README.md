@@ -19,7 +19,7 @@ A simple password-protected phone-number lookup client designed for Termux.
 pkg update
 pkg install python git -y
 
-git clone https://github.com/YOUR_USERNAME/number-lookup-tool.git
+git clone https://github.com/nn5568816-max/lookup0sint.git
 cd number-lookup-tool
 
 pip install -r requirements.txt
