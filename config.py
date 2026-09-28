@@ -3,5 +3,5 @@
 
 API_URL = "https://number-infoapi-adibhai-npue.vercel.app/api/number?number={number}"
 
-# Change this password before publishing your repository.
-PASSWORD_KEY = "TkFOSS0xOTUxLU5I"
+# SHA-256 hash of your password.
+PASSWORD_HASH = "YOUR_64_CHARACTER_SHA256_HASH"
