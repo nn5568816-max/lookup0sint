@@ -9,13 +9,27 @@ import requests
 
 from config import API_URL, PASSWORD_HASH
 
+# ==============================
+# 🎨 COLORS
+# ==============================
+RESET = "\033[0m"
+BOLD = "\033[1m"
+
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+BLUE = "\033[94m"
+MAGENTA = "\033[95m"
+CYAN = "\033[96m"
+WHITE = "\033[97m"
+
 
 def banner():
-    print(r"""
-╔══════════════════════════════════════╗
-║       NUMBER LOOKUP TOOL v1.1       ║
-║          TERMUX EDITION             ║
-╚══════════════════════════════════════╝
+    print(f"""
+{CYAN}{BOLD}╔══════════════════════════════════════╗
+║       {MAGENTA}NUMBER LOOKUP TOOL v1.0{CYAN}        ║
+║          {YELLOW}NARESH_OSINT{CYAN}                ║
+╚══════════════════════════════════════╝{RESET}
 """)
 
 
@@ -23,7 +37,6 @@ def login():
     print("🔐 Password Protected")
 
     for attempt in range(3):
-
         password = getpass.getpass("Password: ")
 
         entered_hash = hashlib.sha256(
@@ -31,25 +44,19 @@ def login():
         ).hexdigest()
 
         if entered_hash == PASSWORD_HASH:
-            print("[+] Access granted.\n")
+            print("[+] Access granted.")
             return True
 
         remaining = 2 - attempt
 
         if remaining > 0:
-            print(
-                f"[!] Wrong password. "
-                f"Attempts left: {remaining}"
-            )
+            print(f"[!] Wrong password. Attempts left: {remaining}")
 
     print("[!] Access denied.")
     sys.exit(1)
 
-
 def clean_number(number):
-
     number = number.strip()
-
     cleaned = re.sub(r"[^\d+]", "", number)
 
     if cleaned.startswith("+"):
@@ -67,86 +74,109 @@ def clean_number(number):
 
 
 def lookup(number):
-
     url = API_URL.format(number=number)
 
-    print("\n[*] Sending authorized API request...")
-    print("[*] HTTP endpoint:", url)
+    # API URL is intentionally NOT displayed
+    print(f"\n{CYAN}[*] Sending authorized API request...{RESET}")
 
     try:
-
         response = requests.get(
             url,
             timeout=15,
             headers={
-                "User-Agent": "NumberLookupTool/1.1",
-                "Accept": "application/json"
+                "User-Agent": "NumberLookupTool/1.0"
             }
         )
 
-        print(f"[+] HTTP Status: {response.status_code}")
+        print(
+            f"{GREEN}[+] HTTP Status: "
+            f"{response.status_code}{RESET}"
+        )
 
         try:
-
             data = response.json()
 
-            print("\n========== RESULT ==========")
+            print(
+                f"\n{MAGENTA}{BOLD}"
+                f"========== RESULT =========="
+                f"{RESET}"
+            )
 
             print(
-                json.dumps(
+                f"{WHITE}"
+                + json.dumps(
                     data,
                     indent=4,
                     ensure_ascii=False
                 )
+                + f"{RESET}"
             )
 
-            print("============================")
+            print(
+                f"{MAGENTA}{BOLD}"
+                f"============================"
+                f"{RESET}"
+            )
 
         except ValueError:
+            print(
+                f"\n{YELLOW}{BOLD}"
+                f"========== RESPONSE =========="
+                f"{RESET}"
+            )
 
-            print("\n========== RESPONSE ==========")
-            print(response.text)
-            print("==============================")
+            print(f"{WHITE}{response.text}{RESET}")
+
+            print(
+                f"{YELLOW}{BOLD}"
+                f"=============================="
+                f"{RESET}"
+            )
 
     except requests.exceptions.Timeout:
-
-        print("[!] API request timed out.")
+        print(
+            f"{RED}[!] API request timed out.{RESET}"
+        )
 
     except requests.exceptions.ConnectionError:
-
-        print("[!] Could not connect to API.")
+        print(
+            f"{RED}[!] Could not connect to API.{RESET}"
+        )
 
     except requests.exceptions.RequestException as error:
-
-        print("[!] Request error:", error)
+        print(
+            f"{RED}[!] Request error: "
+            f"{error}{RESET}"
+        )
 
 
 def main():
-
     banner()
-
     login()
 
     while True:
-
         number = input(
-            "\nEnter phone number (q = quit): "
+            f"\n{CYAN}{BOLD}"
+            f"Enter phone number"
+            f"{RESET} "
+            f"{YELLOW}(q = quit): {RESET}"
         )
 
         if number.lower() == "q":
-
-            print("Bye!")
+            print(f"{GREEN}Bye! 👋{RESET}")
             break
 
         number = clean_number(number)
 
         if not number:
-
-            print("[!] Invalid phone number.")
+            print(
+                f"{RED}[!] Invalid phone number.{RESET}"
+            )
             continue
 
         lookup(number)
 
 
-if name == "main":
+if __name__ == "__main__":
     main()
+
