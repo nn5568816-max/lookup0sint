@@ -13,11 +13,13 @@ from datetime import datetime
 from config import API_URL, PASSWORD_HASH
 
 # ==========================================
-# WOLF OSINT | NUMBER LOOKUP TOOL V2.0
+# WOLF OSINT NUMBER LOOKUP TOOL V2.1
 # ==========================================
 
-VERSION = "2.0"
+VERSION = "2.1"
+HISTORY_FILE = "history.json"
 
+# COLORS
 RESET = "\033[0m"
 BOLD = "\033[1m"
 RED = "\033[91m"
@@ -28,7 +30,6 @@ MAGENTA = "\033[95m"
 CYAN = "\033[96m"
 WHITE = "\033[97m"
 
-
 history = []
 
 
@@ -36,25 +37,44 @@ def clear():
     os.system("cls" if os.name == "nt" else "clear")
 
 
-def banner():
+def load_history():
+    global history
 
+    try:
+        if os.path.exists(HISTORY_FILE):
+            with open(HISTORY_FILE, "r", encoding="utf-8") as file:
+                history = json.load(file)
+
+    except (json.JSONDecodeError, OSError):
+        history = []
+
+
+def save_history():
+    try:
+        with open(HISTORY_FILE, "w", encoding="utf-8") as file:
+            json.dump(history, file, indent=4, ensure_ascii=False)
+
+    except OSError:
+        print(f"{RED}[!] Unable to save history.{RESET}")
+
+
+def banner():
     print(f"""
 {CYAN}{BOLD}
-╔══════════════════════════════════════════╗
-║                                          ║
-║       NARESH // WOLF OSINT               ║
-║                                          ║
-║          NUMBER LOOKUP TOOL              ║
-║                                          ║
-║              VERSION {VERSION}                ║
-║                                          ║
-╚══════════════════════════════════════════╝
-{MAGENTA}       ADVANCED OSINT TERMINAL{RESET}
+╔══════════════════════════════════════════════╗
+║                                              ║
+║           NARESH // WOLF OSINT               ║
+║                                              ║
+║           NUMBER LOOKUP TOOL                ║
+║                                              ║
+║                  V2.1                       ║
+║                                              ║
+╚══════════════════════════════════════════════╝
+{MAGENTA}           ADVANCED OSINT TERMINAL{RESET}
 """)
 
 
 def login():
-
     print(f"{YELLOW}[ SECURITY AUTHENTICATION ]{RESET}")
 
     for attempt in range(3):
@@ -66,7 +86,6 @@ def login():
         ).hexdigest()
 
         if entered_hash == PASSWORD_HASH:
-
             print(f"\n{GREEN}[+] Access Granted!{RESET}")
             return
 
@@ -79,7 +98,6 @@ def login():
 def clean_number(number):
 
     number = number.strip()
-
     cleaned = re.sub(r"[^\d+]", "", number)
 
     if cleaned.startswith("+"):
@@ -96,23 +114,55 @@ def clean_number(number):
     return cleaned
 
 
+def print_json(data, indent=0):
+
+    prefix = " " * indent
+
+    if isinstance(data, dict):
+
+        for key, value in data.items():
+
+            print(
+                f"{prefix}{CYAN}{BOLD}{key}{RESET}"
+                f"{WHITE} : {RESET}",
+                end=""
+            )
+
+            if isinstance(value, (dict, list)):
+                print()
+                print_json(value, indent + 4)
+            else:
+                print(
+                    f"{GREEN}{json.dumps(value, ensure_ascii=False)}{RESET}"
+                )
+
+    elif isinstance(data, list):
+
+        for index, value in enumerate(data, 1):
+
+            print(f"{prefix}{YELLOW}[{index}]{RESET}")
+
+            if isinstance(value, (dict, list)):
+                print_json(value, indent + 4)
+            else:
+                print(f"{prefix}{GREEN}{value}{RESET}")
+
+    else:
+        print(f"{prefix}{GREEN}{data}{RESET}")
+
+
 def show_result(data):
 
-    print(f"\n{MAGENTA}{BOLD}")
-    print("========== LOOKUP RESULT ==========")
-    print(RESET)
+    print(f"""
+{MAGENTA}{BOLD}
+╔══════════════════════════════════════════════╗
+║              LOOKUP RESULT                   ║
+╚══════════════════════════════════════════════╝
+{RESET}""")
 
-    print(
-        f"{WHITE}" +
-        json.dumps(
-            data,
-            indent=4,
-            ensure_ascii=False
-        ) +
-        RESET
-    )
+    print_json(data)
 
-    print(f"{MAGENTA}==================================={RESET}")
+    print(f"\n{MAGENTA}{'═' * 46}{RESET}")
 
 
 def lookup(number):
@@ -127,7 +177,7 @@ def lookup(number):
             url,
             timeout=15,
             headers={
-                "User-Agent": "Naresh-WolfOSINT/2.0",
+                "User-Agent": "Naresh-WolfOSINT/2.1",
                 "Accept": "application/json"
             }
         )
@@ -143,75 +193,140 @@ def lookup(number):
             data = response.json()
 
         except ValueError:
-
-            print(f"{YELLOW}[!] API returned non-JSON response.{RESET}")
-            print(response.text[:10000])
+            print(f"{RED}[!] API returned non-JSON response.{RESET}")
+            print(response.text[:5000])
             return
 
         show_result(data)
 
         history.append({
             "number": number,
-            "time": datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            ),
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "status": response.status_code
         })
 
-    except requests.exceptions.Timeout:
+        save_history()
 
+    except requests.exceptions.Timeout:
         print(f"{RED}[!] API Request Timed Out.{RESET}")
 
     except requests.exceptions.HTTPError as error:
-
         print(f"{RED}[!] HTTP Error: {error}{RESET}")
 
     except requests.exceptions.ConnectionError:
-
         print(f"{RED}[!] API Connection Failed.{RESET}")
 
     except requests.exceptions.RequestException as error:
-
         print(f"{RED}[!] Request Error: {error}{RESET}")
 
 
 def show_history():
 
-    print(f"\n{MAGENTA}========== LOOKUP HISTORY =========={RESET}")
+    print(f"""
+{MAGENTA}{BOLD}
+╔══════════════════════════════════════════════╗
+║                LOOKUP HISTORY                ║
+╚══════════════════════════════════════════════╝
+{RESET}""")
 
     if not history:
-
-        print(f"{YELLOW}No lookup history available.{RESET}")
+        print(f"{YELLOW}[!] No history available.{RESET}")
         return
 
     for index, item in enumerate(history, 1):
 
         print(
-            f"{GREEN}{index}.{RESET} "
-            f"Number: {item['number']} | "
-            f"Time: {item['time']} | "
-            f"Status: {item['status']}"
+            f"{CYAN}{index}.{RESET} "
+            f"{GREEN}Number:{RESET} {item.get('number', 'N/A')}  "
+            f"{YELLOW}| Time:{RESET} {item.get('time', 'N/A')}  "
+            f"{BLUE}| Status:{RESET} {item.get('status', 'N/A')}"
         )
 
+    print(f"\n{MAGENTA}{'═' * 46}{RESET}")
 
-def help_menu():
+
+def search_history():
+
+    if not history:
+        print(f"{YELLOW}[!] No history available.{RESET}")
+        return
+
+    query = input(
+        f"\n{CYAN}Search Number: {RESET}"
+    ).strip()
+
+    if not query:
+        print(f"{RED}[!] Enter a search value.{RESET}")
+        return
+
+    results = [
+        item for item in history
+        if query in str(item.get("number", ""))
+    ]
+
+    if not results:
+        print(f"{RED}[!] No matching records found.{RESET}")
+        return
+
+    print(f"\n{GREEN}[+] {len(results)} Record(s) Found{RESET}")
+
+    for index, item in enumerate(results, 1):
+
+        print(f"""
+{CYAN}Record {index}{RESET}
+{GREEN}Number :{RESET} {item.get('number', 'N/A')}
+{YELLOW}Time   :{RESET} {item.get('time', 'N/A')}
+{BLUE}Status :{RESET} {item.get('status', 'N/A')}
+""")
+
+
+def history_menu():
+
+    while True:
+
+        print(f"""
+{MAGENTA}========== HISTORY MENU =========={RESET}
+
+{GREEN}[1]{WHITE} Show All History
+{GREEN}[2]{WHITE} Search History
+{GREEN}[3]{WHITE} Back to Main Menu
+
+{MAGENTA}=================================={RESET}
+""")
+
+        choice = input(
+            f"{YELLOW}WOLF HISTORY >> {RESET}"
+        ).strip().lower()
+
+        if choice in ("1", "show"):
+            show_history()
+
+        elif choice in ("2", "search"):
+            search_history()
+
+        elif choice in ("3", "back", "q"):
+            break
+
+        else:
+            print(f"{RED}[!] Invalid Option.{RESET}")
+
+
+def about():
 
     print(f"""
-{CYAN}========== HELP MENU =========={RESET}
-
-1. Enter a valid phone number.
-2. API request will be processed.
-3. JSON response will be displayed.
-
-COMMANDS:
-
-help     - Show help
-history  - Show session history
-clear    - Clear terminal
-q        - Exit application
-
-{YELLOW}Use only authorized API services
-and data you have permission to access.{RESET}
+{CYAN}{BOLD}
+╔══════════════════════════════════════════════╗
+║                  ABOUT                       ║
+╠══════════════════════════════════════════════╣
+║                                              ║
+║       PROJECT   : WOLF OSINT                 ║
+║       TOOL      : NUMBER LOOKUP              ║
+║       VERSION   : 2.1                        ║
+║       DEVELOPER : NARESH                     ║
+║       YEAR      : 2026                       ║
+║                                              ║
+╚══════════════════════════════════════════════╝
+{MAGENTA}          ADVANCED OSINT TERMINAL{RESET}
 """)
 
 
@@ -219,22 +334,24 @@ def main():
 
     clear()
     banner()
-
     login()
+    load_history()
 
     while True:
 
         print(f"""
-{CYAN}========== MAIN MENU =========={RESET}
-
-{GREEN}[1]{WHITE} Number Lookup
-{GREEN}[2]{WHITE} Lookup History
-{GREEN}[3]{WHITE} Help
-{GREEN}[4]{WHITE} Clear Screen
-{GREEN}[5]{WHITE} Exit
-
-{CYAN}==============================={RESET}
-""")
+{CYAN}{BOLD}
+╔══════════════════════════════════════════════╗
+║                  MAIN MENU                   ║
+╠══════════════════════════════════════════════╣
+║                                              ║
+║  {GREEN}[1]{WHITE} NUMBER LOOKUP             ║
+║  {GREEN}[2]{WHITE} HISTORY                   ║
+║  {GREEN}[3]{WHITE} ABOUT                     ║
+║  {GREEN}[4]{WHITE} EXIT                      ║
+║                                              ║
+╚══════════════════════════════════════════════╝
+{RESET}""")
 
         choice = input(
             f"{YELLOW}WOLF OSINT >> {RESET}"
@@ -243,7 +360,7 @@ def main():
         if choice in ("1", "lookup"):
 
             number = input(
-                "Enter Phone Number: "
+                f"\n{CYAN}Enter Phone Number: {RESET}"
             )
 
             if number.lower() == "q":
@@ -252,32 +369,22 @@ def main():
             number = clean_number(number)
 
             if not number:
-
                 print(f"{RED}[!] Invalid Phone Number.{RESET}")
                 continue
 
             lookup(number)
 
         elif choice in ("2", "history"):
+            history_menu()
 
-            show_history()
+        elif choice in ("3", "about"):
+            about()
 
-        elif choice in ("3", "help"):
-
-            help_menu()
-
-        elif choice in ("4", "clear"):
-
-            clear()
-            banner()
-
-        elif choice in ("5", "q", "exit"):
-
-            print(f"{GREEN}[+] WOLF OSINT Shutdown.{RESET}")
+        elif choice in ("4", "q", "exit"):
+            print(f"\n{GREEN}[+] WOLF OSINT Shutdown.{RESET}")
             break
 
         else:
-
             print(f"{RED}[!] Invalid Option.{RESET}")
 
 
