@@ -1,4 +1,4 @@
-# NUMBER LOOKUP TOOL v1.0
+# NUMBER LOOKUP TOOL v2.1
 
 A simple password-protected phone-number lookup client designed for Termux.
 
