@@ -65,9 +65,9 @@ def banner():
 ║                                              ║
 ║           NARESH // WOLF OSINT               ║
 ║                                              ║
-║           NUMBER LOOKUP TOOL                ║
+║           NUMBER LOOKUP TOOL                 ║
 ║                                              ║
-║                  V2.1                       ║
+║                  V2.1                        ║
 ║                                              ║
 ╚══════════════════════════════════════════════╝
 {MAGENTA}           ADVANCED OSINT TERMINAL{RESET}
